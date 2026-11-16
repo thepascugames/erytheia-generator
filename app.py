@@ -20,7 +20,7 @@ LOGOS = [
     {"id": "FRIMANG", "name": "FRIMANG", "file": str(LOGOS_DIR / "FRIMANG.png")}
 ]
 
-HTML_PAGE = """<!DOCTYPE html>
+HTML_PAGE = r"""<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -38,12 +38,12 @@ HTML_PAGE = """<!DOCTYPE html>
   button, .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
   .btn-yellow { background: var(--yellow); color: #000; }
   .btn-outline { background: transparent; border: 2px solid #333; color: #fff; }
-  .btn-outline.active { border-color: var(--yellow); color: var(--yellow); }
+  .btn-outline.active { border-color: var(--yellow); color: var(--yellow); background: rgba(255, 204, 0, 0.1); }
   input[type="number"], input[type="date"], textarea { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; font-size: 0.95rem; margin-bottom: 12px; resize: vertical; }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
   .logos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .logo-btn { padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; text-align: center; font-size: 0.85rem; cursor: pointer; }
-  .logo-btn.active { border-color: var(--yellow); color: var(--yellow); }
+  .logo-btn { padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; text-align: center; font-size: 0.85rem; cursor: pointer; user-select: none; }
+  .logo-btn.active { border-color: var(--yellow); color: var(--yellow); background: rgba(255, 204, 0, 0.1); }
   #preview { margin-top: 20px; text-align: center; display: none; }
   #preview img { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
   #status { text-align: center; color: var(--muted); margin: 12px 0; min-height: 24px; }
@@ -54,8 +54,8 @@ HTML_PAGE = """<!DOCTYPE html>
   <div class="card">
     <label>Condición</label>
     <div class="row">
-      <button type="button" class="btn-outline active" id="btnLocal" onclick="setHome(true)">🏠 Local</button>
-      <button type="button" class="btn-outline" id="btnAway" onclick="setHome(false)">✈️ Visitante</button>
+      <button type="button" class="btn-outline active" id="btnLocal">🏠 Local</button>
+      <button type="button" class="btn-outline" id="btnAway">✈️ Visitante</button>
     </div>
     <label>Resultado</label>
     <div class="row">
@@ -65,7 +65,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <label>Escudo del rival</label>
     <div class="logos" id="logoList" style="margin-bottom:16px">
       __LOGOS__
-      <div class="logo-btn active" data-id="" onclick="selectLogo(this)">Sin logo</div>
+      <div class="logo-btn active" data-id="">Sin logo</div>
     </div>
     <label>Goleadores (un nombre y minuto por línea)</label>
     <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
@@ -73,21 +73,34 @@ HTML_PAGE = """<!DOCTYPE html>
     <input type="date" id="datePicker">
     <label>Foto del partido</label>
     <input type="file" id="photo" accept="image/*" style="margin-bottom:16px; color:#ccc">
-    <button type="button" class="btn-yellow" onclick="generate()">Generar Full Time</button>
+    <button type="button" class="btn-yellow" id="btnGenerate">Generar Full Time</button>
     <div id="status"></div>
   </div>
   <div id="preview">
     <img id="resultImg" src="" alt="Full Time">
     <a id="downloadBtn" class="btn btn-yellow" style="margin-top:12px; text-decoration:none; text-align:center" download="fulltime.png">Descargar imagen</a>
   </div>
+
 <script>
 let isHome = true;
 let selectedLogo = "";
 const MONTHS_ES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
 
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const d = new Date();
   document.getElementById('datePicker').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  document.getElementById('btnLocal').addEventListener('click', () => setHome(true));
+  document.getElementById('btnAway').addEventListener('click', () => setHome(false));
+  document.getElementById('btnGenerate').addEventListener('click', generate);
+
+  document.querySelectorAll('.logo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.logo-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedLogo = btn.dataset.id || "";
+    });
+  });
 });
 
 function formatSpanishDate(iso) {
@@ -100,12 +113,6 @@ function setHome(v) {
   isHome = v;
   document.getElementById('btnLocal').classList.toggle('active', v);
   document.getElementById('btnAway').classList.toggle('active', !v);
-}
-
-function selectLogo(el) {
-  document.querySelectorAll('.logo-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  selectedLogo = el.dataset.id || "";
 }
 
 async function generate() {
@@ -173,7 +180,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path in ("/", "/index.html"):
-            logos_html = "".join(f'<div class="logo-btn" data-id="{lg["id"]}" onclick="selectLogo(this)">{lg["name"]}</div>\n' for lg in LOGOS)
+            logos_html = "".join(f'<div class="logo-btn" data-id="{lg["id"]}">{lg["name"]}</div>\n' for lg in LOGOS)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
