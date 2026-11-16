@@ -76,15 +76,12 @@ def generate_fulltime(
     league_text="LIGACARMONA 2026-27",
     output_name="fulltime.png"
 ):
-    # 1. Preparamos la foto de fondo enviada por el fotógrafo
     bg = prepare_background(photo_path)
 
-    # 2. Superponemos la plantilla real de Photoshop (full-time.psd) encima de la foto
     psd_path = BASE_DIR / "full-time.psd"
     if psd_path.exists():
         try:
             psd = PSDImage.open(psd_path)
-            # Renderizamos las capas visibles de la plantilla PSD respetando transparencias
             template_layer = psd.composite().convert("RGBA")
             if template_layer.size != (WIDTH, HEIGHT):
                 template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
@@ -96,7 +93,6 @@ def generate_fulltime(
 
     draw = ImageDraw.Draw(base)
 
-    # 3. Escudos de equipo y rival
     erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=164)
     rival_logo = load_logo(rival_logo_path, max_size=164) if rival_logo_path else None
 
@@ -109,7 +105,6 @@ def generate_fulltime(
         left_score, right_score = score_away, score_home
         scorers, scorers_side = scorers_erytheia, "right"
 
-    # 4. Marcador numérico con tu tipografía
     box_size = 162
     gap = 78
     total_w = box_size * 2 + gap
@@ -130,7 +125,6 @@ def generate_fulltime(
         rx = scores_x + total_w + 40
         base.paste(right_logo, (rx, ly), right_logo)
 
-    # 5. Goleadores
     if scorers:
         scorer_font = get_font(23, role="text")
         line_h = 33
@@ -148,11 +142,11 @@ def generate_fulltime(
             else:
                 draw.text((sep_x + 45 - bbox[0], y_pos), txt, font=scorer_font, fill=WHITE)
 
-    # 6. Fecha
-    footer_center_y = 1396
-    small_font = get_font(15, role="text")
+    # Fecha alineada en tamaño (22) y altura (1384) con LIGACARMONA 2026-27 y ERYTHEIAFC
+    footer_center_y = 1384
+    footer_font = get_font(22, role="text")
     date_up = date_text.upper()
-    draw_centered_text(draw, date_up, WIDTH / 2, footer_center_y, small_font, WHITE)
+    draw_centered_text(draw, date_up, WIDTH / 2, footer_center_y, footer_font, WHITE)
 
     out = OUTPUT_DIR / output_name
     base.convert("RGB").save(out, "PNG", quality=95)
