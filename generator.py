@@ -48,7 +48,7 @@ def load_logo(path, max_size=165):
     except Exception:
         return None
 
-def prepare_background(photo_path):
+def prepare_full_background(photo_path):
     if photo_path and os.path.exists(photo_path):
         photo = Image.open(photo_path).convert("RGB")
     else:
@@ -65,7 +65,25 @@ def prepare_background(photo_path):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS).convert("RGBA")
 
-def generate_fulltime(
+def prepare_box_photo(photo_path, box_w, box_h):
+    if photo_path and os.path.exists(photo_path):
+        photo = Image.open(photo_path).convert("RGB")
+    else:
+        photo = Image.new("RGB", (box_w, box_h), (200, 200, 200))
+    target_ratio = box_w / box_h
+    img_ratio = photo.width / photo.height
+    if img_ratio > target_ratio:
+        new_width = int(photo.height * target_ratio)
+        left = (photo.width - new_width) // 2
+        photo = photo.crop((left, 0, left + new_width, photo.height))
+    else:
+        new_height = int(photo.width / target_ratio)
+        top = (photo.height - new_height) // 2
+        photo = photo.crop((0, top, photo.width, top + new_height))
+    return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
+
+def generate_graphic(
+    mode,
     photo_path,
     score_home,
     score_away,
@@ -73,23 +91,45 @@ def generate_fulltime(
     date_text,
     is_home=True,
     rival_logo_path=None,
-    league_text="LIGACARMONA 2026-27",
-    output_name="fulltime.png"
+    output_name="graphic.png"
 ):
-    bg = prepare_background(photo_path)
+    base = Image.new("RGBA", (WIDTH, HEIGHT), (25, 25, 25))
 
-    psd_path = BASE_DIR / "full-time.psd"
-    if psd_path.exists():
-        try:
-            psd = PSDImage.open(psd_path)
-            template_layer = psd.composite().convert("RGBA")
-            if template_layer.size != (WIDTH, HEIGHT):
-                template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
-            base = Image.alpha_composite(bg, template_layer)
-        except Exception:
-            base = bg
+    if mode == "halftime":
+        # Coordenadas exactas del recuadro interior blanco en el Half-Time (ajustables si fuera necesario)
+        box_x, box_y = 75, 210
+        box_w, box_h = 930, 560
+        
+        # 1. Recortar y ajustar la foto para que llene exactamente el recuadro
+        box_photo = prepare_box_photo(photo_path, box_w, box_h)
+        base.paste(box_photo, (box_x, box_y))
+
+        # 2. Cargar la plantilla PSD de Half-Time (con el hueco transparente) por encima
+        psd_path = BASE_DIR / "half-time.psd"
+        if psd_path.exists():
+            try:
+                psd = PSDImage.open(psd_path)
+                template_layer = psd.composite().convert("RGBA")
+                if template_layer.size != (WIDTH, HEIGHT):
+                    template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+                base = Image.alpha_composite(base, template_layer)
+            except Exception:
+                pass
     else:
-        base = bg
+        # Modo Full-Time (pantalla completa)
+        bg = prepare_full_background(photo_path)
+        psd_path = BASE_DIR / "full-time.psd"
+        if psd_path.exists():
+            try:
+                psd = PSDImage.open(psd_path)
+                template_layer = psd.composite().convert("RGBA")
+                if template_layer.size != (WIDTH, HEIGHT):
+                    template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+                base = Image.alpha_composite(bg, template_layer)
+            except Exception:
+                base = bg
+        else:
+            base = bg
 
     draw = ImageDraw.Draw(base)
 
@@ -109,7 +149,9 @@ def generate_fulltime(
     gap = 78
     total_w = box_size * 2 + gap
     scores_x = (WIDTH - total_w) // 2
-    score_y = 985
+    
+    # Altura del marcador según el modo (en Half-Time suele estar un poco más abajo o alineado a su caja)
+    score_y = 780 if mode == "halftime" else 985
 
     score_font = get_font(112, role="title")
     draw_centered_text(draw, str(left_score), scores_x + box_size / 2, score_y + box_size / 2, score_font, WHITE)
@@ -125,7 +167,8 @@ def generate_fulltime(
         rx = scores_x + total_w + 40
         base.paste(right_logo, (rx, ly), right_logo)
 
-    if scorers:
+    # Nota: En Half-Time normalmente no hay goleadores al descanso, pero si se ponen, los adaptamos
+    if scorers and mode != "halftime":
         scorer_font = get_font(23, role="text")
         line_h = 33
         start_y = 1185
@@ -142,8 +185,7 @@ def generate_fulltime(
             else:
                 draw.text((sep_x + 45 - bbox[0], y_pos), txt, font=scorer_font, fill=WHITE)
 
-    # Fecha alineada en tamaño (22) y altura (1384) con LIGACARMONA 2026-27 y ERYTHEIAFC
-    footer_center_y = 1384
+    footer_center_y = 1384 if mode != "halftime" else 1384
     footer_font = get_font(22, role="text")
     date_up = date_text.upper()
     draw_centered_text(draw, date_up, WIDTH / 2, footer_center_y, footer_font, WHITE)
