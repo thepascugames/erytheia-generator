@@ -99,15 +99,15 @@ def generate_graphic(
     base = Image.new("RGBA", (WIDTH, HEIGHT), (245, 245, 245))
 
     if mode == "halftime":
-        # 1. Coordenadas exactas del recuadro de la foto en Half-Time
+        # 1. Coordenadas exactas del rectángulo superior de la foto en Half-Time
         box_x, box_y = 65, 175
         box_w, box_h = 950, 580
         
-        # Pegar la foto de fondo en ese recuadro
+        # Pegar la foto recortada exactamente en el recuadro
         box_photo = prepare_box_photo(photo_path, box_w, box_h)
         base.paste(box_photo, (box_x, box_y))
 
-        # 2. Cargar PSD y volver transparente el fondo blanco interior para que se vea la foto
+        # 2. Cargar plantilla PSD de Half-Time POR ENCIMA (respetando su transparencia interior)
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -116,14 +116,7 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Truco mágico: hacer transparente el blanco sólido del recuadro en el PSD
-                pixels = template_layer.load()
-                for y in range(box_y + 5, box_y + box_h - 5):
-                    for x in range(box_x + 5, box_x + box_w - 5):
-                        r, g, b, a = pixels[x, y]
-                        if r > 235 and g > 235 and b > 235:
-                            pixels[x, y] = (r, g, b, 0)
-
+                # Fusionamos la plantilla encima de la foto de forma limpia
                 base = Image.alpha_composite(base, template_layer)
             except Exception:
                 pass
