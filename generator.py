@@ -36,7 +36,7 @@ def draw_centered_text(draw, text, center_x, center_y, font, fill):
     y = center_y - (th / 2) - bbox[1]
     draw.text((x, y), text, font=font, fill=fill)
 
-def load_logo(path, max_size=110):
+def load_logo(path, max_size=85):
     if not path or not os.path.exists(path):
         return None
     try:
@@ -93,21 +93,22 @@ def generate_graphic(
     is_home=True,
     rival_logo_path=None,
     output_name="graphic.png",
-    stadium_text="LA MIRANDILLA PAVILION",
-    matchup_text="ERYTHEIA FC VS RIVAL"
+    stadium_text="EL NÁUTICO PAVILION",
+    matchup_text="ERYTHEIA FC VS BARCELONA"
 ):
-    base = Image.new("RGBA", (WIDTH, HEIGHT), (245, 245, 245))
-
     if mode == "halftime":
-        # 1. Coordenadas exactas del rectángulo superior de la foto en Half-Time
+        # 1. Lienzo base con el color crema de fondo del cartel
+        base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
+
+        # 2. Coordenadas exactas del recuadro superior para la foto
         box_x, box_y = 65, 175
-        box_w, box_h = 950, 580
+        box_w, box_h = 950, 575
         
-        # Pegar la foto recortada exactamente en el recuadro
+        # Pegamos la foto recortada en su sitio exacto
         box_photo = prepare_box_photo(photo_path, box_w, box_h)
         base.paste(box_photo, (box_x, box_y))
 
-        # 2. Cargar plantilla PSD de Half-Time POR ENCIMA (respetando su transparencia interior)
+        # 3. Cargamos la plantilla PSD y hacemos transparente el relleno gris del recuadro superior
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -116,16 +117,23 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Fusionamos la plantilla encima de la foto de forma limpia
+                # Volvemos transparente el fondo gris/sólido del recuadro para que se vea la foto debajo
+                pixels = template_layer.load()
+                for y in range(box_y + 5, box_y + box_h - 5):
+                    for x in range(box_x + 5, box_x + box_w - 5):
+                        r, g, b, a = pixels[x, y]
+                        if 180 < r < 240 and 180 < g < 240 and 180 < b < 240:
+                            pixels[x, y] = (r, g, b, 0)
+
                 base = Image.alpha_composite(base, template_layer)
             except Exception:
                 pass
 
         draw = ImageDraw.Draw(base)
 
-        # 3. Escudos y marcador en la caja inferior amarilla
-        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=110)
-        rival_logo = load_logo(rival_logo_path, max_size=110) if rival_logo_path else None
+        # 4. Colocamos los escudos y el marcador dentro de la caja amarilla inferior
+        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=85)
+        rival_logo = load_logo(rival_logo_path, max_size=85) if rival_logo_path else None
 
         if is_home:
             left_logo, right_logo = erytheia_logo, rival_logo
@@ -134,23 +142,30 @@ def generate_graphic(
             left_logo, right_logo = rival_logo, erytheia_logo
             left_score, right_score = score_away, score_home
 
-        score_y = 750
-        box_size = 115
+        # Posición de la caja inferior de marcador
+        score_y = 765
+        box_size = 110
         
-        score_font = get_font(65, role="title")
+        score_font = get_font(58, role="title")
+        # Números del marcador en el centro blanco
         draw_centered_text(draw, str(left_score), 450, score_y + box_size / 2, score_font, BLACK)
         draw_centered_text(draw, str(right_score), 630, score_y + box_size / 2, score_font, BLACK)
 
+        # Escudos en los bloques amarillos laterales
         if left_logo:
             ly = score_y + (box_size - left_logo.height) // 2
             base.paste(left_logo, (330, ly), left_logo)
 
         if right_logo:
             ly = score_y + (box_size - right_logo.height) // 2
-            base.paste(right_logo, (640, ly), right_logo)
+            base.paste(right_logo, (655, ly), right_logo)
+
+        # Texto del estadio centrado debajo de la caja
+        stadium_font = get_font(18, role="text")
+        draw_centered_text(draw, stadium_text.upper(), WIDTH / 2, 905, stadium_font, BLACK)
 
     else:
-        # MODO FULL-TIME (Intacta y sin tocar)
+        # MODO FULL-TIME (Intacta y funcionando tal como la tenías)
         bg = prepare_full_background(photo_path)
         psd_path = BASE_DIR / "full-time.psd"
         if psd_path.exists():
