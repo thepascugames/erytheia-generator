@@ -99,14 +99,15 @@ def generate_graphic(
     base = Image.new("RGBA", (WIDTH, HEIGHT), (245, 245, 245))
 
     if mode == "halftime":
-        # 1. Coordenadas exactas del gran recuadro superior de la foto en Half-Time (según tu imagen)
+        # 1. Coordenadas exactas del recuadro de la foto en Half-Time
         box_x, box_y = 65, 175
         box_w, box_h = 950, 580
         
+        # Pegar la foto de fondo en ese recuadro
         box_photo = prepare_box_photo(photo_path, box_w, box_h)
         base.paste(box_photo, (box_x, box_y))
 
-        # 2. Cargar plantilla PSD de Half-Time por encima
+        # 2. Cargar PSD y volver transparente el fondo blanco interior para que se vea la foto
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -114,13 +115,22 @@ def generate_graphic(
                 template_layer = psd.composite().convert("RGBA")
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+                
+                # Truco mágico: hacer transparente el blanco sólido del recuadro en el PSD
+                pixels = template_layer.load()
+                for y in range(box_y + 5, box_y + box_h - 5):
+                    for x in range(box_x + 5, box_x + box_w - 5):
+                        r, g, b, a = pixels[x, y]
+                        if r > 235 and g > 235 and b > 235:
+                            pixels[x, y] = (r, g, b, 0)
+
                 base = Image.alpha_composite(base, template_layer)
             except Exception:
                 pass
 
         draw = ImageDraw.Draw(base)
 
-        # 3. Posicionamiento del marcador y escudos en la caja inferior amarilla del Half-Time
+        # 3. Escudos y marcador en la caja inferior amarilla
         erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=110)
         rival_logo = load_logo(rival_logo_path, max_size=110) if rival_logo_path else None
 
@@ -131,16 +141,13 @@ def generate_graphic(
             left_logo, right_logo = rival_logo, erytheia_logo
             left_score, right_score = score_away, score_home
 
-        # Coordenadas de la caja amarilla de resultado del Half-Time
         score_y = 750
         box_size = 115
         
         score_font = get_font(65, role="title")
-        # Dibujar marcador (izquierda y derecha de la cajita central)
         draw_centered_text(draw, str(left_score), 450, score_y + box_size / 2, score_font, BLACK)
         draw_centered_text(draw, str(right_score), 630, score_y + box_size / 2, score_font, BLACK)
 
-        # Escudos dentro de las zonas laterales amarillas
         if left_logo:
             ly = score_y + (box_size - left_logo.height) // 2
             base.paste(left_logo, (330, ly), left_logo)
@@ -149,19 +156,8 @@ def generate_graphic(
             ly = score_y + (box_size - right_logo.height) // 2
             base.paste(right_logo, (640, ly), right_logo)
 
-        # Estadio abajo
-        stadium_font = get_font(20, role="text")
-        draw_centered_text(draw, stadium_text.upper(), WIDTH / 2, 875, stadium_font, BLACK)
-
-        # Arriba enfrentamiento y fecha inferior (limpiando el 16 noviembre fijo)
-        top_font = get_font(16, role="text")
-        draw.text((760, 115), matchup_text.upper(), font=top_font, fill=BLACK)
-
-        date_font = get_font(18, role="text")
-        draw.text((80, 1375), date_text.upper(), font=date_font, fill=BLACK)
-
     else:
-        # MODO FULL-TIME (Intacta tal como la tenías)
+        # MODO FULL-TIME (Intacta y sin tocar)
         bg = prepare_full_background(photo_path)
         psd_path = BASE_DIR / "full-time.psd"
         if psd_path.exists():
