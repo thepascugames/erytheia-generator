@@ -5,7 +5,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).parent))
-from generator import generate_fulltime, LOGOS_DIR, OUTPUT_DIR
+from generator import generate_graphic, LOGOS_DIR, OUTPUT_DIR
 
 WEB_DIR = Path(__file__).parent
 UPLOAD_DIR = WEB_DIR / "uploads"
@@ -50,38 +50,51 @@ HTML_PAGE = r"""<!DOCTYPE html>
 </style>
 </head>
 <body>
-  <h1>⚽ Erytheia FC – Full Time</h1>
+  <h1 id="pageTitle">⚽ Erytheia FC – Full Time</h1>
   <div class="card">
+    <label>Tipo de gráfico</label>
+    <div class="row">
+      <button type="button" class="btn-outline" id="btnHalfTime">⏱️ Half Time</button>
+      <button type="button" class="btn-outline active" id="btnFullTime">🏁 Full Time</button>
+    </div>
+
     <label>Condición</label>
     <div class="row">
       <button type="button" class="btn-outline active" id="btnLocal">🏠 Local</button>
       <button type="button" class="btn-outline" id="btnAway">✈️ Visitante</button>
     </div>
+
     <label>Resultado</label>
     <div class="row">
       <input type="number" id="scoreHome" value="0" min="0" max="20">
       <input type="number" id="scoreAway" value="0" min="0" max="20">
     </div>
+
     <label>Escudo del rival</label>
     <div class="logos" id="logoList" style="margin-bottom:16px">
       __LOGOS__
       <div class="logo-btn active" data-id="">Sin logo</div>
     </div>
+
     <label>Goleadores (un nombre y minuto por línea)</label>
     <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
+
     <label>Fecha del partido</label>
     <input type="date" id="datePicker">
+
     <label>Foto del partido</label>
     <input type="file" id="photo" accept="image/*" style="margin-bottom:16px; color:#ccc">
+
     <button type="button" class="btn-yellow" id="btnGenerate">Generar Full Time</button>
     <div id="status"></div>
   </div>
   <div id="preview">
-    <img id="resultImg" src="" alt="Full Time">
+    <img id="resultImg" src="" alt="Resultado">
     <a id="downloadBtn" class="btn btn-yellow" style="margin-top:12px; text-decoration:none; text-align:center" download="fulltime.png">Descargar imagen</a>
   </div>
 
 <script>
+let currentMode = "fulltime";
 let isHome = true;
 let selectedLogo = "";
 const MONTHS_ES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
@@ -90,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = new Date();
   document.getElementById('datePicker').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
+  document.getElementById('btnHalfTime').addEventListener('click', () => setMode("halftime"));
+  document.getElementById('btnFullTime').addEventListener('click', () => setMode("fulltime"));
   document.getElementById('btnLocal').addEventListener('click', () => setHome(true));
   document.getElementById('btnAway').addEventListener('click', () => setHome(false));
   document.getElementById('btnGenerate').addEventListener('click', generate);
@@ -102,6 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+function setMode(mode) {
+  currentMode = mode;
+  const isHalf = mode === "halftime";
+  document.getElementById('btnHalfTime').classList.toggle('active', isHalf);
+  document.getElementById('btnFullTime').classList.toggle('active', !isHalf);
+  document.getElementById('pageTitle').textContent = isHalf ? "⚽ Erytheia FC – Half Time" : "⚽ Erytheia FC – Full Time";
+  document.getElementById('btnGenerate').textContent = isHalf ? "Generar Half Time" : "Generar Full Time";
+  document.getElementById('downloadBtn').setAttribute("download", isHalf ? "halftime.png" : "fulltime.png");
+}
 
 function formatSpanishDate(iso) {
   if (!iso) return "";
@@ -125,6 +150,7 @@ async function generate() {
   const scorersLines = rawScorers.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
   const form = new FormData();
+  form.append("mode", currentMode);
   form.append("is_home", isHome ? "1" : "0");
   form.append("score_home", document.getElementById("scoreHome").value);
   form.append("score_away", document.getElementById("scoreAway").value);
@@ -212,6 +238,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 fields, files = {}, {}
 
+            mode = fields.get("mode", "fulltime")
             is_home = fields.get("is_home", "1") == "1"
             score_home = int(fields.get("score_home", 0))
             score_away = int(fields.get("score_away", 0))
@@ -230,9 +257,11 @@ class Handler(BaseHTTPRequestHandler):
                     with open(photo_path, "wb") as f:
                         f.write(fileinfo["data"])
 
-            out_name = f"ft_{int(time.time())}.png"
+            prefix = "ht" if mode == "halftime" else "ft"
+            out_name = f"{prefix}_{int(time.time())}.png"
             dest = OUT_DIR / out_name
-            result = generate_fulltime(
+            result = generate_graphic(
+                mode=mode,
                 photo_path=photo_path,
                 score_home=score_home,
                 score_away=score_away,
