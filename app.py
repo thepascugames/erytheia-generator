@@ -39,7 +39,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .btn-yellow { background: var(--yellow); color: #000; }
   .btn-outline { background: transparent; border: 2px solid #333; color: #fff; }
   .btn-outline.active { border-color: var(--yellow); color: var(--yellow); background: rgba(255, 204, 0, 0.1); }
-  input[type="number"], input[type="date"], textarea { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; font-size: 0.95rem; margin-bottom: 12px; resize: vertical; }
+  input[type="text"], input[type="number"], input[type="date"], textarea { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; font-size: 0.95rem; margin-bottom: 12px; resize: vertical; }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
   .logos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .logo-btn { padding: 12px; border-radius: 10px; border: 2px solid #333; background: #111; color: #fff; text-align: center; font-size: 0.85rem; cursor: pointer; user-select: none; }
@@ -56,6 +56,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
     <div class="row">
       <button type="button" class="btn-outline" id="btnHalfTime">⏱️ Half Time</button>
       <button type="button" class="btn-outline active" id="btnFullTime">🏁 Full Time</button>
+    </div>
+
+    <div id="halfTimeFields" style="display:none;">
+      <label>Enfrentamiento (arriba derecha)</label>
+      <input type="text" id="matchupInput" value="ERYTHEIA FC VS FRIMANG" placeholder="Ej: ERYTHEIA FC VS FRIMANG">
     </div>
 
     <label>Condición</label>
@@ -76,8 +81,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
       <div class="logo-btn active" data-id="">Sin logo</div>
     </div>
 
-    <label>Goleadores (un nombre y minuto por línea)</label>
-    <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
+    <div id="fullTimeFields">
+      <label>Goleadores (un nombre y minuto por línea)</label>
+      <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
+    </div>
 
     <label>Fecha del partido</label>
     <input type="date" id="datePicker">
@@ -103,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = new Date();
   document.getElementById('datePicker').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
+  setMode("fulltime");
+
   document.getElementById('btnHalfTime').addEventListener('click', () => setMode("halftime"));
   document.getElementById('btnFullTime').addEventListener('click', () => setMode("fulltime"));
   document.getElementById('btnLocal').addEventListener('click', () => setHome(true));
@@ -123,6 +132,8 @@ function setMode(mode) {
   const isHalf = mode === "halftime";
   document.getElementById('btnHalfTime').classList.toggle('active', isHalf);
   document.getElementById('btnFullTime').classList.toggle('active', !isHalf);
+  document.getElementById('halfTimeFields').style.display = isHalf ? "block" : "none";
+  document.getElementById('fullTimeFields').style.display = isHalf ? "none" : "block";
   document.getElementById('pageTitle').textContent = isHalf ? "⚽ Erytheia FC – Half Time" : "⚽ Erytheia FC – Full Time";
   document.getElementById('btnGenerate').textContent = isHalf ? "Generar Half Time" : "Generar Full Time";
   document.getElementById('downloadBtn').setAttribute("download", isHalf ? "halftime.png" : "fulltime.png");
@@ -157,6 +168,7 @@ async function generate() {
   form.append("rival_logo", selectedLogo);
   form.append("scorers", scorersLines.join("\n"));
   form.append("date", formatSpanishDate(document.getElementById("datePicker").value));
+  form.append("matchup", document.getElementById("matchupInput").value);
   
   const photo = document.getElementById("photo").files[0];
   if (photo) form.append("photo", photo);
@@ -246,6 +258,7 @@ class Handler(BaseHTTPRequestHandler):
             scorers_raw = fields.get("scorers", "") or ""
             scorers = [l.strip() for l in scorers_raw.split("\n") if l.strip()]
             date_text = fields.get("date", "") or ""
+            matchup_text = fields.get("matchup", "ERYTHEIA FC VS FRIMANG") or ""
             rival_path = next((lg["file"] for lg in LOGOS if lg["id"] == rival_id), None)
             
             photo_path = None
@@ -269,7 +282,8 @@ class Handler(BaseHTTPRequestHandler):
                 rival_logo_path=rival_path,
                 date_text=date_text,
                 is_home=is_home,
-                output_name=out_name
+                output_name=out_name,
+                matchup_text=matchup_text
             )
             if Path(result).resolve() != Path(dest).resolve():
                 shutil.copy(result, dest)
