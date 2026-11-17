@@ -12,7 +12,6 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 WIDTH, HEIGHT = 1080, 1440
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-YELLOW_SCORE = (255, 198, 0)
 
 def get_font(size, role="text"):
     font_name = "font_title.ttf" if role == "title" else "font_text.ttf"
@@ -79,10 +78,10 @@ def generate_graphic(
     output_name="graphic.png"
 ):
     if mode == "halftime":
-        # 1. Foto ocupando TODO el fondo (igual que en Full-Time)
+        # 1. Foto cubriendo todo el fondo
         base = prepare_full_background(photo_path)
 
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
+        # 2. Plantilla PSD de Half-Time por encima
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -91,7 +90,6 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Hacemos transparente el fondo gris interior del recuadro para que la foto del fondo se vea a través
                 box_x, box_y = 33, 250
                 box_w, box_h = 1014, 850
                 pixels = template_layer.load()
@@ -107,35 +105,20 @@ def generate_graphic(
 
         draw = ImageDraw.Draw(base)
 
-        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=102)
-        rival_logo = load_logo(rival_logo_path, max_size=102) if rival_logo_path else None
-
         if is_home:
-            left_logo, right_logo = erytheia_logo, rival_logo
             left_score, right_score = score_home, score_away
         else:
-            left_logo, right_logo = rival_logo, erytheia_logo
             left_score, right_score = score_away, score_home
 
+        # Posición exacta de los números en la caja inferior de Half-Time
         box_top = 1106
         box_height = 118
         center_y = box_top + (box_height / 2)
 
-        draw.line([(WIDTH // 2, box_top + 16), (WIDTH // 2, box_top + box_height - 16)], fill=YELLOW_SCORE, width=4)
-
+        # Números en blanco, sin palito separador central y en sus coordenadas exactas
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 482, center_y, score_font, YELLOW_SCORE)
-        draw_centered_text(draw, str(right_score), 598, center_y, score_font, YELLOW_SCORE)
-
-        if left_logo:
-            lx = 365 - (left_logo.width // 2)
-            ly = int(center_y - (left_logo.height // 2))
-            base.paste(left_logo, (lx, ly), left_logo)
-
-        if right_logo:
-            rx = 715 - (right_logo.width // 2)
-            ly = int(center_y - (right_logo.height // 2))
-            base.paste(right_logo, (rx, ly), right_logo)
+        draw_centered_text(draw, str(left_score), 482, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 598, center_y, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
