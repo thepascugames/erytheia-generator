@@ -120,11 +120,10 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas bajadas exactamente a la altura de los recuadros de los escudos inferiores
-        # Y = 1320 sitúa los números alineados verticalmente con la franja de los escudos
+        # 3. Coordenadas centradas verticalmente justo a la altura de los rectángulos y los escudos inferiores (Y = 1175)
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 280, 1320, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 800, 1320, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, 1175, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, 1175, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
