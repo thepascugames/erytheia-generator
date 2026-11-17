@@ -36,7 +36,7 @@ def draw_centered_text(draw, text, center_x, center_y, font, fill):
     y = center_y - (th / 2) - bbox[1]
     draw.text((x, y), text, font=font, fill=fill)
 
-def load_logo(path, max_size=102):
+def load_logo(path, max_size=130):
     if not path or not os.path.exists(path):
         return None
     try:
@@ -80,39 +80,6 @@ def generate_graphic(
     if mode == "halftime":
         # 1. Foto ocupando TODO el fondo a pantalla completa
         base = prepare_full_background(photo_path)
-
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
-        psd_path = BASE_DIR / "halftime.psd"
-        if not psd_path.exists():
-            psd_path = BASE_DIR / "half-time.psd"
-            
-        if psd_path.exists():
-            try:
-                psd = PSDImage.open(psd_path)
-                template_layer = psd.composite().convert("RGBA")
-                if template_layer.size != (WIDTH, HEIGHT):
-                    template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
-                
-                # Borramos los números '0 | 0' originales del PSD encima de HALFTIME
-                pixels = template_layer.load()
-                for y in range(780, 910):
-                    for x in range(350, 730):
-                        r, g, b, a = pixels[x, y]
-                        if a > 10 and r > 180 and g > 180 and b > 180:
-                            pixels[x, y] = (r, g, b, 0)
-
-                # Hacemos transparente la ventana superior para que se vea la foto de fondo
-                box_x, box_y = 33, 250
-                box_w, box_h = 1014, 850
-                for y in range(box_y, box_y + box_h):
-                    for x in range(box_x, box_x + box_w):
-                        r, g, b, a = pixels[x, y]
-                        pixels[x, y] = (r, g, b, 0)
-
-                base = Image.alpha_composite(base, template_layer)
-            except Exception:
-                pass
-
         draw = ImageDraw.Draw(base)
 
         if is_home:
@@ -120,10 +87,55 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas simétricas perfectas (Izquierda: 350, Derecha: 735, Y: 1375)
-        score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 350, 1375, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 735, 1375, score_font, WHITE)
+        # Cargar logotipos (Rival a la izquierda, Erytheia a la derecha)
+        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=130)
+        rival_logo = load_logo(rival_logo_path, max_size=130) if rival_logo_path else None
+
+        if is_home:
+            left_logo, right_logo = rival_logo, erytheia_logo
+        else:
+            left_logo, right_logo = erytheia_logo, rival_logo
+
+        # Estructura idéntica a Full-Time: Bloque central de marcadores y escudos a los lados
+        box_size = 130
+        gap = 100
+        total_w = box_size * 2 + gap
+        scores_x = (WIDTH - total_w) // 2
+        score_y = 1080
+
+        # Texto "HALF-TIME" centrado arriba de los números
+        title_font = get_font(36, role="title")
+        draw_centered_text(draw, "HALF-TIME", WIDTH / 2, score_y - 45, title_font, WHITE)
+
+        # Números grandes de goles
+        score_font = get_font(180, role="title")
+        left_center_x = scores_x + box_size / 2
+        right_center_x = scores_x + box_size + gap + box_size / 2
+        
+        draw_centered_text(draw, str(left_score), left_center_x, score_y + box_size / 2, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), right_center_x, score_y + box_size / 2, score_font, WHITE)
+
+        # Barra separadora vertical central amarilla entre los goles
+        sep_x = WIDTH / 2
+        draw.line([(sep_x, score_y + 25), (sep_x, score_y + box_size - 25)], fill=(234, 182, 38), width=5)
+
+        # Logotipos colocados a los lados de los bloques de goles
+        if left_logo:
+            ly = score_y + (box_size - left_logo.height) // 2
+            lx = scores_x - left_logo.width - 45
+            base.paste(left_logo, (lx, ly), left_logo)
+
+        if right_logo:
+            ly = score_y + (box_size - right_logo.height) // 2
+            rx = scores_x + total_w + 45
+            base.paste(right_logo, (rx, ly), right_logo)
+
+        # Textos inferiores (Fecha a la izquierda, ERYTHEIAFC a la derecha)
+        footer_font = get_font(20, role="text")
+        footer_y = 1380
+        if date_text:
+            draw.text((80, footer_y - 10), date_text.upper(), font=footer_font, fill=WHITE)
+        draw.text((WIDTH - 250, footer_y - 10), "ERYTHEIAFC", font=footer_font, fill=WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
