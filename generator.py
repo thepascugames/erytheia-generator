@@ -93,11 +93,17 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Hacemos transparente ÚNICAMENTE el rectángulo interior de la ventana de la foto
-                # para que la foto de fondo se vea a través de él, manteniendo intactos el texto "HALFTIME" y los marcos.
+                # Borramos los números '0 | 0' que vienen quemados por defecto en el PSD encima de HALFTIME
+                pixels = template_layer.load()
+                for y in range(780, 910):
+                    for x in range(350, 730):
+                        r, g, b, a = pixels[x, y]
+                        if a > 10 and r > 180 and g > 180 and b > 180:
+                            pixels[x, y] = (r, g, b, 0)
+
+                # Hacemos transparente la ventana superior para que se vea la foto de fondo
                 box_x, box_y = 33, 250
                 box_w, box_h = 1014, 850
-                pixels = template_layer.load()
                 for y in range(box_y, box_y + box_h):
                     for x in range(box_x, box_x + box_w):
                         r, g, b, a = pixels[x, y]
@@ -114,14 +120,14 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas exactas para pintar los goles en blanco al lado de cada escudo inferior
+        # 3. Coordenadas exactas a los lados de cada escudo/recuadro inferior
         box_top = 1106
         box_height = 118
         center_y = box_top + (box_height / 2)
 
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 425, center_y, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 655, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, center_y, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
