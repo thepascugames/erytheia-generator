@@ -84,14 +84,6 @@ def prepare_box_photo(photo_path, box_w, box_h):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
 
-def clean_area_from_above(img, x1, y1, x2, y2):
-    """Limpia un texto antiguo copiando los píxeles limpios justo de encima para conservar la textura."""
-    pixels = img.load()
-    sample_y = max(0, y1 - 12)
-    for y in range(y1, y2):
-        for x in range(x1, x2):
-            pixels[x, y] = pixels[x, sample_y]
-
 def generate_graphic(
     mode,
     photo_path,
@@ -102,8 +94,7 @@ def generate_graphic(
     is_home=True,
     rival_logo_path=None,
     output_name="graphic.png",
-    stadium_text="EL NÁUTICO PAVILION",
-    matchup_text="ERYTHEIA FC VS FRIMANG"
+    stadium_text="EL NÁUTICO PAVILION"
 ):
     if mode == "halftime":
         base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
@@ -133,20 +124,8 @@ def generate_graphic(
             except Exception:
                 pass
 
-        # Limpiar el texto fijo 'ERYTHEIA FC VS FRIMANG' arriba a la derecha conservando la textura
-        clean_area_from_above(base, 740, 195, 1055, 232)
-
         draw = ImageDraw.Draw(base)
 
-        # Dibujar el nuevo enfrentamiento editable alineado a la derecha (X = 1047)
-        if matchup_text.strip():
-            matchup_font = get_font(19, role="text")
-            m_up = matchup_text.strip().upper()
-            bbox = draw.textbbox((0, 0), m_up, font=matchup_font)
-            tw = bbox[2] - bbox[0]
-            draw.text((1047 - tw - bbox[0], 202 - bbox[1]), m_up, font=matchup_font, fill=(55, 55, 55))
-
-        # Escudos y marcador
         erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=102)
         rival_logo = load_logo(rival_logo_path, max_size=102) if rival_logo_path else None
 
