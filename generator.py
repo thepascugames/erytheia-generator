@@ -37,7 +37,7 @@ def draw_centered_text(draw, text, center_x, center_y, font, fill):
     y = center_y - (th / 2) - bbox[1]
     draw.text((x, y), text, font=font, fill=fill)
 
-def load_logo(path, max_size=90):
+def load_logo(path, max_size=102):
     if not path or not os.path.exists(path):
         return None
     try:
@@ -120,7 +120,6 @@ def generate_graphic(
                 for y in range(box_y + 4, box_y + box_h - 4):
                     for x in range(box_x + 4, box_x + box_w - 4):
                         r, g, b, a = pixels[x, y]
-                        # Deja intacta la caja amarilla/blanca inferior (y >= 1100) y limpia el fondo gris
                         if y < 1102 and 170 < r < 245 and 170 < g < 245 and 170 < b < 245:
                             pixels[x, y] = (r, g, b, 0)
 
@@ -130,9 +129,9 @@ def generate_graphic(
 
         draw = ImageDraw.Draw(base)
 
-        # 3. Escudos y marcador en la caja amarilla/blanca inferior (Y: 1105 a 1225)
-        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=88)
-        rival_logo = load_logo(rival_logo_path, max_size=88) if rival_logo_path else None
+        # 3. Escudos y marcador con medidas exactas de la plantilla original
+        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=102)
+        rival_logo = load_logo(rival_logo_path, max_size=102) if rival_logo_path else None
 
         if is_home:
             left_logo, right_logo = erytheia_logo, rival_logo
@@ -146,14 +145,14 @@ def generate_graphic(
         center_y = box_top + (box_height / 2)
 
         # Línea vertical amarilla separadora en el centro de la caja blanca
-        draw.line([(WIDTH // 2, box_top + 18), (WIDTH // 2, box_top + box_height - 18)], fill=YELLOW_SCORE, width=4)
+        draw.line([(WIDTH // 2, box_top + 16), (WIDTH // 2, box_top + box_height - 16)], fill=YELLOW_SCORE, width=4)
 
-        # Números del marcador en amarillo dentro de la zona blanca
-        score_font = get_font(82, role="title")
+        # Números del marcador más grandes (98pt) dentro de la zona blanca
+        score_font = get_font(98, role="title")
         draw_centered_text(draw, str(left_score), 482, center_y, score_font, YELLOW_SCORE)
         draw_centered_text(draw, str(right_score), 598, center_y, score_font, YELLOW_SCORE)
 
-        # Escudos centrados en los dos recuadros amarillos laterales
+        # Escudos ampliados (102px) centrados en los bloques amarillos
         if left_logo:
             lx = 365 - (left_logo.width // 2)
             ly = int(center_y - (left_logo.height // 2))
