@@ -70,13 +70,13 @@ HTML_PAGE = r"""<!DOCTYPE html>
       <input type="number" id="scoreAway" value="0" min="0" max="20">
     </div>
 
-    <label>Escudo del rival</label>
-    <div class="logos" id="logoList" style="margin-bottom:16px">
-      __LOGOS__
-      <div class="logo-btn active" data-id="">Sin logo</div>
-    </div>
-
     <div id="fullTimeFields">
+      <label>Escudo del rival</label>
+      <div class="logos" id="logoList" style="margin-bottom:16px">
+        __LOGOS__
+        <div class="logo-btn active" data-id="">Sin logo</div>
+      </div>
+
       <label>Goleadores (un nombre y minuto por línea)</label>
       <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
 
