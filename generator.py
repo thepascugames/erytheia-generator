@@ -90,13 +90,14 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
+                # Delimitamos estrictamente el recuadro superior para que NO pise la caja del marcador inferior
                 box_x, box_y = 33, 250
-                box_w, box_h = 1014, 850
+                box_w, box_h = 1014, 780
                 pixels = template_layer.load()
                 for y in range(box_y + 4, box_y + box_h - 4):
                     for x in range(box_x + 4, box_x + box_w - 4):
                         r, g, b, a = pixels[x, y]
-                        if y < 1102 and 170 < r < 245 and 170 < g < 245 and 170 < b < 245:
+                        if 170 < r < 245 and 170 < g < 245 and 170 < b < 245:
                             pixels[x, y] = (r, g, b, 0)
 
                 base = Image.alpha_composite(base, template_layer)
@@ -110,12 +111,11 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # Posición exacta de los números en la caja inferior de Half-Time
+        # Posición exacta de los números dentro de la franja blanca inferior de tu plantilla
         box_top = 1106
         box_height = 118
         center_y = box_top + (box_height / 2)
 
-        # Números en blanco, sin palito separador central y en sus coordenadas exactas
         score_font = get_font(98, role="title")
         draw_centered_text(draw, str(left_score), 482, center_y, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 598, center_y, score_font, WHITE)
