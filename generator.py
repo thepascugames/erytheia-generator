@@ -93,7 +93,7 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Borramos los números '0 | 0' que vienen quemados por defecto en el PSD encima de HALFTIME
+                # Borramos los números '0 | 0' originales del PSD encima de HALFTIME
                 pixels = template_layer.load()
                 for y in range(780, 910):
                     for x in range(350, 730):
@@ -120,14 +120,11 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas exactas a los lados de cada escudo/recuadro inferior
-        box_top = 1106
-        box_height = 118
-        center_y = box_top + (box_height / 2)
-
+        # 3. Coordenadas bajadas exactamente a la altura de los recuadros de los escudos inferiores
+        # Y = 1320 sitúa los números alineados verticalmente con la franja de los escudos
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 280, center_y, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 800, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, 1320, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, 1320, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
