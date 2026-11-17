@@ -67,23 +67,6 @@ def prepare_full_background(photo_path):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS).convert("RGBA")
 
-def prepare_box_photo(photo_path, box_w, box_h):
-    if photo_path and os.path.exists(photo_path):
-        photo = Image.open(photo_path).convert("RGB")
-    else:
-        photo = Image.new("RGB", (box_w, box_h), (200, 200, 200))
-    target_ratio = box_w / box_h
-    img_ratio = photo.width / photo.height
-    if img_ratio > target_ratio:
-        new_width = int(photo.height * target_ratio)
-        left = (photo.width - new_width) // 2
-        photo = photo.crop((left, 0, left + new_width, photo.height))
-    else:
-        new_height = int(photo.width / target_ratio)
-        top = (photo.height - new_height) // 2
-        photo = photo.crop((0, top, photo.width, top + new_height))
-    return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
-
 def generate_graphic(
     mode,
     photo_path,
@@ -96,14 +79,10 @@ def generate_graphic(
     output_name="graphic.png"
 ):
     if mode == "halftime":
-        base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
+        # 1. Foto ocupando TODO el fondo (igual que en Full-Time)
+        base = prepare_full_background(photo_path)
 
-        box_x, box_y = 33, 250
-        box_w, box_h = 1014, 922
-        
-        box_photo = prepare_box_photo(photo_path, box_w, box_h)
-        base.paste(box_photo, (box_x, box_y))
-
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -112,6 +91,9 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
+                # Hacemos transparente el fondo gris interior del recuadro para que la foto del fondo se vea a través
+                box_x, box_y = 33, 250
+                box_w, box_h = 1014, 850
                 pixels = template_layer.load()
                 for y in range(box_y + 4, box_y + box_h - 4):
                     for x in range(box_x + 4, box_x + box_w - 4):
