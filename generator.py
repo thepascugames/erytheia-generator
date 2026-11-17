@@ -84,6 +84,14 @@ def prepare_box_photo(photo_path, box_w, box_h):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
 
+def clean_area_from_above(img, x1, y1, x2, y2):
+    """Limpia un texto antiguo copiando los píxeles limpios justo de encima para conservar la textura."""
+    pixels = img.load()
+    sample_y = max(0, y1 - 12)
+    for y in range(y1, y2):
+        for x in range(x1, x2):
+            pixels[x, y] = pixels[x, sample_y]
+
 def generate_graphic(
     mode,
     photo_path,
@@ -95,19 +103,17 @@ def generate_graphic(
     rival_logo_path=None,
     output_name="graphic.png",
     stadium_text="EL NÁUTICO PAVILION",
-    matchup_text="ERYTHEIA FC VS BARCELONA"
+    matchup_text="ERYTHEIA FC VS FRIMANG"
 ):
     if mode == "halftime":
         base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
 
-        # 1. Coordenadas exactas del recuadro con borde blanco en half-time.psd
         box_x, box_y = 33, 250
         box_w, box_h = 1014, 922
         
         box_photo = prepare_box_photo(photo_path, box_w, box_h)
         base.paste(box_photo, (box_x, box_y))
 
-        # 2. Cargamos la plantilla PSD y quitamos el fondo gris de dentro del recuadro blanco
         psd_path = BASE_DIR / "half-time.psd"
         if psd_path.exists():
             try:
@@ -127,9 +133,20 @@ def generate_graphic(
             except Exception:
                 pass
 
+        # Limpiar el texto fijo 'ERYTHEIA FC VS FRIMANG' arriba a la derecha conservando la textura
+        clean_area_from_above(base, 740, 195, 1055, 232)
+
         draw = ImageDraw.Draw(base)
 
-        # 3. Escudos y marcador con medidas exactas de la plantilla original
+        # Dibujar el nuevo enfrentamiento editable alineado a la derecha (X = 1047)
+        if matchup_text.strip():
+            matchup_font = get_font(19, role="text")
+            m_up = matchup_text.strip().upper()
+            bbox = draw.textbbox((0, 0), m_up, font=matchup_font)
+            tw = bbox[2] - bbox[0]
+            draw.text((1047 - tw - bbox[0], 202 - bbox[1]), m_up, font=matchup_font, fill=(55, 55, 55))
+
+        # Escudos y marcador
         erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=102)
         rival_logo = load_logo(rival_logo_path, max_size=102) if rival_logo_path else None
 
@@ -144,15 +161,12 @@ def generate_graphic(
         box_height = 118
         center_y = box_top + (box_height / 2)
 
-        # Línea vertical amarilla separadora en el centro de la caja blanca
         draw.line([(WIDTH // 2, box_top + 16), (WIDTH // 2, box_top + box_height - 16)], fill=YELLOW_SCORE, width=4)
 
-        # Números del marcador más grandes (98pt) dentro de la zona blanca
         score_font = get_font(98, role="title")
         draw_centered_text(draw, str(left_score), 482, center_y, score_font, YELLOW_SCORE)
         draw_centered_text(draw, str(right_score), 598, center_y, score_font, YELLOW_SCORE)
 
-        # Escudos ampliados (102px) centrados en los bloques amarillos
         if left_logo:
             lx = 365 - (left_logo.width // 2)
             ly = int(center_y - (left_logo.height // 2))
@@ -163,7 +177,6 @@ def generate_graphic(
             ly = int(center_y - (right_logo.height // 2))
             base.paste(right_logo, (rx, ly), right_logo)
 
-        # Texto del estadio debajo de la caja
         stadium_font = get_font(22, role="text")
         draw_centered_text(draw, stadium_text.upper(), WIDTH / 2, 1265, stadium_font, BLACK)
 
