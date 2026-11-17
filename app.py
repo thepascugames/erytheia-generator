@@ -79,10 +79,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
     <div id="fullTimeFields">
       <label>Goleadores (un nombre y minuto por línea)</label>
       <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
-    </div>
 
-    <label>Fecha del partido</label>
-    <input type="date" id="datePicker">
+      <label>Fecha del partido</label>
+      <input type="date" id="datePicker">
+    </div>
 
     <label>Foto del partido</label>
     <input type="file" id="photo" accept="image/*" style="margin-bottom:16px; color:#ccc">
