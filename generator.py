@@ -66,23 +66,6 @@ def prepare_full_background(photo_path):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS).convert("RGBA")
 
-def prepare_box_photo(photo_path, box_w, box_h):
-    if photo_path and os.path.exists(photo_path):
-        photo = Image.open(photo_path).convert("RGB")
-    else:
-        photo = Image.new("RGB", (box_w, box_h), (200, 200, 200))
-    target_ratio = box_w / box_h
-    img_ratio = photo.width / photo.height
-    if img_ratio > target_ratio:
-        new_width = int(photo.height * target_ratio)
-        left = (photo.width - new_width) // 2
-        photo = photo.crop((left, 0, left + new_width, photo.height))
-    else:
-        new_height = int(photo.width / target_ratio)
-        top = (photo.height - new_height) // 2
-        photo = photo.crop((0, top, photo.width, top + new_height))
-    return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
-
 def generate_graphic(
     mode,
     photo_path,
@@ -95,16 +78,10 @@ def generate_graphic(
     output_name="graphic.png"
 ):
     if mode == "halftime":
-        # 1. Creamos base clara de fondo
-        base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
+        # 1. Foto ocupando TODO el fondo (igual que en Full-Time)
+        base = prepare_full_background(photo_path)
 
-        # 2. Pegamos la foto recortada en el rectángulo superior
-        box_x, box_y = 33, 250
-        box_w, box_h = 1014, 850
-        box_photo = prepare_box_photo(photo_path, box_w, box_h)
-        base.paste(box_photo, (box_x, box_y))
-
-        # 3. Plantilla PSD de Half-Time por encima
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
         psd_path = BASE_DIR / "halftime.psd"
         if not psd_path.exists():
             psd_path = BASE_DIR / "half-time.psd"
@@ -126,12 +103,12 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # Posición vertical centrada en la cajita inferior
+        # Posición vertical en la franja inferior de la plantilla
         box_top = 1106
         box_height = 118
         center_y = box_top + (box_height / 2)
 
-        # Coordenadas X para colocar cada número pegado a su respectivo escudo lateral
+        # Coordenadas X exactas para colocar cada número al lado de su escudo inferior
         score_font = get_font(98, role="title")
         draw_centered_text(draw, str(left_score), 430, center_y, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 650, center_y, score_font, WHITE)
