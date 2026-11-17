@@ -78,7 +78,7 @@ def generate_graphic(
     output_name="graphic.png"
 ):
     if mode == "halftime":
-        # 1. Foto ocupando TODO el fondo (a pantalla completa)
+        # 1. Foto ocupando TODO el fondo a pantalla completa (igual que en Full-Time)
         base = prepare_full_background(photo_path)
 
         # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
@@ -93,12 +93,13 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Borramos los números antiguos '0 | 0' que trae el PSD por defecto encima de HALFTIME
+                # Hacemos transparente el fondo blanco/claro del PSD para que la foto se vea en todo el fondo,
+                # manteniendo intactos los textos oscuros, marcos y logotipos.
                 pixels = template_layer.load()
-                for y in range(790, 890):
-                    for x in range(300, 780):
+                for y in range(HEIGHT):
+                    for x in range(WIDTH):
                         r, g, b, a = pixels[x, y]
-                        if a > 10 and r > 200 and g > 200 and b > 200: # si es blanco/claro
+                        if r > 235 and g > 235 and b > 235:
                             pixels[x, y] = (r, g, b, 0)
 
                 base = Image.alpha_composite(base, template_layer)
@@ -114,8 +115,8 @@ def generate_graphic(
 
         # 3. Coordenadas exactas para pintar los goles en blanco AL LADO de cada escudo inferior
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 425, 1318, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 655, 1318, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, 1318, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, 1318, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
