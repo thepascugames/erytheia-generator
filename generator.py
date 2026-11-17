@@ -120,10 +120,10 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas finales ajustadas exactamente al centro de los recuadros inferiores (Y = 1345)
+        # 3. Coordenadas bajadas un poco más al centro de los recuadros inferiores (Y = 1375)
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 280, 1345, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 800, 1345, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, 1375, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, 1375, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
