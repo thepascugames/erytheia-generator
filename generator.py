@@ -116,7 +116,7 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 base = Image.alpha_composite(base, template_layer)
-            exceptException:
+            except Exception:
                 pass
 
         draw = ImageDraw.Draw(base)
@@ -132,7 +132,6 @@ def generate_graphic(
         center_y = box_top + (box_height / 2)
 
         # Coordenadas X para colocar cada número pegado a su respectivo escudo lateral
-        # Izquierda (cerca del escudo rival) y Derecha (cerca del escudo de Erytheia)
         score_font = get_font(98, role="title")
         draw_centered_text(draw, str(left_score), 430, center_y, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 650, center_y, score_font, WHITE)
