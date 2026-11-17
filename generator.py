@@ -120,10 +120,10 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Coordenadas exactas centradas en los rectángulos de los escudos inferiores (Y = 1250)
+        # 3. Coordenadas bajadas exactamente al centro de los rectángulos inferiores (Y = 1315)
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 280, 1250, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 800, 1250, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 280, 1315, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 800, 1315, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
