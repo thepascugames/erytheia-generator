@@ -1,4 +1,4 @@
-#!/usr/init/env python3
+#!/usr/bin/env python3
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
@@ -81,7 +81,7 @@ def generate_graphic(
         # 1. Foto del partido ocupando TODO el fondo a pantalla completa
         base = prepare_full_background(photo_path)
 
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA tal cual (respetando los marcos y escudos del PSD)
         psd_path = BASE_DIR / "halftime.psd"
         if not psd_path.exists():
             psd_path = BASE_DIR / "half-time.psd"
@@ -93,22 +93,6 @@ def generate_graphic(
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
                 
-                # Borramos los números '0 | 3' (o los que traiga por defecto el PSD) para que no se solapen
-                pixels = template_layer.load()
-                for y in range(700, 1050):
-                    for x in range(300, 780):
-                        r, g, b, a = pixels[x, y]
-                        if a > 10 and r > 180 and g > 180 and b > 180:
-                            pixels[x, y] = (r, g, b, 0)
-
-                # Hacemos transparente únicamente la ventana superior de la foto
-                box_x, box_y = 33, 250
-                box_w, box_h = 1014, 800
-                for y in range(box_y, box_y + box_h):
-                    for x in range(box_x, box_x + box_w):
-                        r, g, b, a = pixels[x, y]
-                        pixels[x, y] = (r, g, b, 0)
-
                 base = Image.alpha_composite(base, template_layer)
             except Exception:
                 pass
@@ -120,7 +104,7 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Pintamos los números grandes de los goles en sus huecos exactos (estilo de tu última foto)
+        # 3. Pintamos únicamente los números grandes de los goles en sus huecos exactos
         score_font = get_font(210, role="title")
         draw_centered_text(draw, str(left_score), 405, 870, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 675, 870, score_font, WHITE)
