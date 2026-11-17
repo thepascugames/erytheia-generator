@@ -66,6 +66,23 @@ def prepare_full_background(photo_path):
         photo = photo.crop((0, top, photo.width, top + new_height))
     return photo.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS).convert("RGBA")
 
+def prepare_box_photo(photo_path, box_w, box_h):
+    if photo_path and os.path.exists(photo_path):
+        photo = Image.open(photo_path).convert("RGB")
+    else:
+        photo = Image.new("RGB", (box_w, box_h), (200, 200, 200))
+    target_ratio = box_w / box_h
+    img_ratio = photo.width / photo.height
+    if img_ratio > target_ratio:
+        new_width = int(photo.height * target_ratio)
+        left = (photo.width - new_width) // 2
+        photo = photo.crop((left, 0, left + new_width, photo.height))
+    else:
+        new_height = int(photo.width / target_ratio)
+        top = (photo.height - new_height) // 2
+        photo = photo.crop((0, top, photo.width, top + new_height))
+    return photo.resize((box_w, box_h), Image.Resampling.LANCZOS).convert("RGBA")
+
 def generate_graphic(
     mode,
     photo_path,
@@ -78,30 +95,28 @@ def generate_graphic(
     output_name="graphic.png"
 ):
     if mode == "halftime":
-        # 1. Foto cubriendo todo el fondo
-        base = prepare_full_background(photo_path)
+        # 1. Creamos base clara de fondo
+        base = Image.new("RGBA", (WIDTH, HEIGHT), (242, 242, 242))
 
-        # 2. Plantilla PSD de Half-Time por encima
-        psd_path = BASE_DIR / "half-time.psd"
+        # 2. Pegamos la foto recortada en el rectángulo superior
+        box_x, box_y = 33, 250
+        box_w, box_h = 1014, 850
+        box_photo = prepare_box_photo(photo_path, box_w, box_h)
+        base.paste(box_photo, (box_x, box_y))
+
+        # 3. Plantilla PSD de Half-Time por encima
+        psd_path = BASE_DIR / "halftime.psd"
+        if not psd_path.exists():
+            psd_path = BASE_DIR / "half-time.psd"
+            
         if psd_path.exists():
             try:
                 psd = PSDImage.open(psd_path)
                 template_layer = psd.composite().convert("RGBA")
                 if template_layer.size != (WIDTH, HEIGHT):
                     template_layer = template_layer.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
-                
-                # Delimitamos estrictamente el recuadro superior para que NO pise la caja del marcador inferior
-                box_x, box_y = 33, 250
-                box_w, box_h = 1014, 780
-                pixels = template_layer.load()
-                for y in range(box_y + 4, box_y + box_h - 4):
-                    for x in range(box_x + 4, box_x + box_w - 4):
-                        r, g, b, a = pixels[x, y]
-                        if 170 < r < 245 and 170 < g < 245 and 170 < b < 245:
-                            pixels[x, y] = (r, g, b, 0)
-
                 base = Image.alpha_composite(base, template_layer)
-            except Exception:
+            exceptException:
                 pass
 
         draw = ImageDraw.Draw(base)
@@ -111,14 +126,16 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # Posición exacta de los números dentro de la franja blanca inferior de tu plantilla
+        # Posición vertical centrada en la cajita inferior
         box_top = 1106
         box_height = 118
         center_y = box_top + (box_height / 2)
 
+        # Coordenadas X para colocar cada número pegado a su respectivo escudo lateral
+        # Izquierda (cerca del escudo rival) y Derecha (cerca del escudo de Erytheia)
         score_font = get_font(98, role="title")
-        draw_centered_text(draw, str(left_score), 482, center_y, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 598, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 430, center_y, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 650, center_y, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
