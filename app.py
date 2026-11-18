@@ -71,17 +71,19 @@ HTML_PAGE = r"""<!DOCTYPE html>
     </div>
 
     <div id="fullTimeFields">
-      <label>Escudo del rival</label>
-      <div class="logos" id="logoList" style="margin-bottom:16px">
-        __LOGOS__
-        <div class="logo-btn active" data-id="">Sin logo</div>
+      <div id="fullTimeHiddenInFT">
+        <label>Escudo del rival</label>
+        <div class="logos" id="logoList" style="margin-bottom:16px">
+          __LOGOS__
+          <div class="logo-btn active" data-id="">Sin logo</div>
+        </div>
+
+        <label>Fecha del partido</label>
+        <input type="date" id="datePicker">
       </div>
 
       <label>Goleadores (un nombre y minuto por línea)</label>
       <textarea id="scorers" rows="3" placeholder="Ej: JUANMA 12'&#10;MIGUEL 34'"></textarea>
-
-      <label>Fecha del partido</label>
-      <input type="date" id="datePicker">
     </div>
 
     <label>Foto del partido</label>
@@ -128,6 +130,7 @@ function setMode(mode) {
   document.getElementById('btnHalfTime').classList.toggle('active', isHalf);
   document.getElementById('btnFullTime').classList.toggle('active', !isHalf);
   document.getElementById('fullTimeFields').style.display = isHalf ? "none" : "block";
+  document.getElementById('fullTimeHiddenInFT').style.display = isHalf ? "block" : "none";
   document.getElementById('pageTitle').textContent = isHalf ? "⚽ Erytheia FC – Half Time" : "⚽ Erytheia FC – Full Time";
   document.getElementById('btnGenerate').textContent = isHalf ? "Generar Half Time" : "Generar Full Time";
   document.getElementById('downloadBtn').setAttribute("download", isHalf ? "halftime.png" : "fulltime.png");
@@ -159,9 +162,9 @@ async function generate() {
   form.append("is_home", isHome ? "1" : "0");
   form.append("score_home", document.getElementById("scoreHome").value);
   form.append("score_away", document.getElementById("scoreAway").value);
-  form.append("rival_logo", selectedLogo);
+  form.append("rival_logo", currentMode === "fulltime" ? "" : selectedLogo);
   form.append("scorers", scorersLines.join("\n"));
-  form.append("date", formatSpanishDate(document.getElementById("datePicker").value));
+  form.append("date", currentMode === "fulltime" ? "" : formatSpanishDate(document.getElementById("datePicker").value));
   
   const photo = document.getElementById("photo").files[0];
   if (photo) form.append("photo", photo);
@@ -247,10 +250,10 @@ class Handler(BaseHTTPRequestHandler):
             is_home = fields.get("is_home", "1") == "1"
             score_home = int(fields.get("score_home", 0))
             score_away = int(fields.get("score_away", 0))
-            rival_id = fields.get("rival_logo", "") or ""
+            rival_id = "" if mode == "fulltime" else (fields.get("rival_logo", "") or "")
             scorers_raw = fields.get("scorers", "") or ""
             scorers = [l.strip() for l in scorers_raw.split("\n") if l.strip()]
-            date_text = fields.get("date", "") or ""
+            date_text = "" if mode == "fulltime" else (fields.get("date", "") or "")
             rival_path = next((lg["file"] for lg in LOGOS if lg["id"] == rival_id), None)
             
             photo_path = None
