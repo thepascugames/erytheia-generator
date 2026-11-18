@@ -104,10 +104,10 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Números ajustados exactamente a la posición y tamaño del ejemplo de referencia (Tamaño: 280, X: 375/705, Y: 1050)
+        # 3. Números bajados a su posición correcta (Y = 1180)
         score_font = get_font(280, role="title")
-        draw_centered_text(draw, str(left_score), 375, 1050, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 705, 1050, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 375, 1180, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 705, 1180, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
