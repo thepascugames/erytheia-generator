@@ -1,4 +1,4 @@
-#!/usr/init/env python3
+#!/usr/bin/env python3
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
@@ -29,7 +29,6 @@ def get_font(size, role="text"):
     return ImageFont.load_default()
 
 def get_numbers_font(size):
-    """Carga la nueva fuente específica para los números de Half-Time"""
     candidates = [
         BASE_DIR / "font_numbers.ttf",
         BASE_DIR / "font_numbers.otf",
@@ -97,7 +96,7 @@ def generate_graphic(
         # 1. Foto del partido ocupando TODO el fondo a pantalla completa
         base = prepare_full_background(photo_path)
 
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA (respetando sus marcos, textos y escudos fijos)
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
         psd_path = BASE_DIR / "halftime.psd"
         if not psd_path.exists():
             psd_path = BASE_DIR / "half-time.psd"
@@ -115,15 +114,13 @@ def generate_graphic(
 
         draw = ImageDraw.Draw(base)
 
-        if is_home:
-            left_score, right_score = score_home, score_away
-        else:
-            left_score, right_score = score_away, score_home
+        # En Half-Time ignoramos la condición de local/visitante: score_home a la izquierda, score_away a la derecha
+        left_score, right_score = score_home, score_away
 
-        # 3. Números del Half-Time usando exclusivamente tu nueva fuente 'font_numbers.ttf'
-        score_font = get_numbers_font(280)
-        draw_centered_text(draw, str(left_score), 375, 1180, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 705, 1180, score_font, WHITE)
+        # 3. Números cuadrados y centrados entre las líneas amarillas según la segunda referencia
+        score_font = get_numbers_font(165)
+        draw_centered_text(draw, str(left_score), 415, 1135, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 665, 1135, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
