@@ -81,7 +81,7 @@ def generate_graphic(
         # 1. Foto del partido ocupando TODO el fondo a pantalla completa
         base = prepare_full_background(photo_path)
 
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA tal cual (respetando los marcos y escudos del PSD)
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA (respetando sus marcos, textos y escudos fijos)
         psd_path = BASE_DIR / "halftime.psd"
         if not psd_path.exists():
             psd_path = BASE_DIR / "half-time.psd"
@@ -104,10 +104,10 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Pintamos únicamente los números grandes de los goles en sus huecos exactos
+        # 3. Pintamos los números con el tamaño exacto y posicionados perfectamente en su lugar (Y = 960)
         score_font = get_font(210, role="title")
-        draw_centered_text(draw, str(left_score), 405, 870, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 675, 870, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 395, 960, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 685, 960, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
