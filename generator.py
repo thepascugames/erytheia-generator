@@ -117,10 +117,10 @@ def generate_graphic(
         # En Half-Time ignoramos la condición de local/visitante: score_home a la izquierda, score_away a la derecha
         left_score, right_score = score_home, score_away
 
-        # 3. Números cuadrados y centrados entre las líneas amarillas según la segunda referencia
-        score_font = get_numbers_font(165)
-        draw_centered_text(draw, str(left_score), 415, 1135, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 665, 1135, score_font, WHITE)
+        # 3. Números ligeramente más juntos y bajados para clavar la segunda foto
+        score_font = get_numbers_font(140)
+        draw_centered_text(draw, str(left_score), 435, 1155, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 645, 1155, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
