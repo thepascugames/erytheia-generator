@@ -117,10 +117,10 @@ def generate_graphic(
         # En Half-Time ignoramos la condición de local/visitante: score_home a la izquierda, score_away a la derecha
         left_score, right_score = score_home, score_away
 
-        # 3. Números centrados verticalmente con los rectángulos de los escudos
+        # 3. Números bajados a Y=1205 para centrarlos con los rectángulos de los escudos
         score_font = get_numbers_font(140)
-        draw_centered_text(draw, str(left_score), 435, 1175, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), 645, 1175, score_font, WHITE)
+        draw_centered_text(draw, str(left_score), 435, 1205, score_font, WHITE)
+        draw_centered_text(draw, str(right_score), 645, 1205, score_font, WHITE)
 
     else:
         # MODO FULL-TIME (Intacto)
