@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/init/env python3
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
@@ -29,6 +29,7 @@ def get_font(size, role="text"):
     return ImageFont.load_default()
 
 def get_numbers_font(size):
+    """Carga la nueva fuente específica para los números de Half-Time"""
     candidates = [
         BASE_DIR / "font_numbers.ttf",
         BASE_DIR / "font_numbers.otf",
@@ -96,7 +97,7 @@ def generate_graphic(
         # 1. Foto del partido ocupando TODO el fondo a pantalla completa
         base = prepare_full_background(photo_path)
 
-        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA
+        # 2. Cargamos la plantilla PSD de Half-Time POR ENCIMA (respetando sus marcos, textos y escudos fijos)
         psd_path = BASE_DIR / "halftime.psd"
         if not psd_path.exists():
             psd_path = BASE_DIR / "half-time.psd"
@@ -114,16 +115,18 @@ def generate_graphic(
 
         draw = ImageDraw.Draw(base)
 
-        # En Half-Time ignoramos la condición de local/visitante: score_home a la izquierda, score_away a la derecha
-        left_score, right_score = score_home, score_away
+        if is_home:
+            left_score, right_score = score_home, score_away
+        else:
+            left_score, right_score = score_away, score_home
 
-        # 3. Números del Half-Time con la fuente font_numbers.ttf
+        # 3. Números del Half-Time usando exclusivamente tu nueva fuente 'font_numbers.ttf'
         score_font = get_numbers_font(280)
         draw_centered_text(draw, str(left_score), 375, 1180, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 705, 1180, score_font, WHITE)
 
     else:
-        # MODO FULL-TIME (Mantiene la condición de local/visitante intacta)
+        # MODO FULL-TIME (Intacto)
         bg = prepare_full_background(photo_path)
         psd_path = BASE_DIR / "full-time.psd"
         if psd_path.exists():
