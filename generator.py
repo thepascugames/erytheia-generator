@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/init/env python3
 from PIL import Image, ImageDraw, ImageFont
 import os
 from pathlib import Path
@@ -18,6 +18,22 @@ def get_font(size, role="text"):
     candidates = [
         BASE_DIR / font_name,
         BASE_DIR / f"font_{role}.otf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(str(path), size)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+def get_numbers_font(size):
+    """Carga la nueva fuente específica para los números de Half-Time"""
+    candidates = [
+        BASE_DIR / "font_numbers.ttf",
+        BASE_DIR / "font_numbers.otf",
+        BASE_DIR / "font_title.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     ]
     for path in candidates:
@@ -104,8 +120,8 @@ def generate_graphic(
         else:
             left_score, right_score = score_away, score_home
 
-        # 3. Números bajados a su posición correcta (Y = 1180)
-        score_font = get_font(280, role="title")
+        # 3. Números del Half-Time usando exclusivamente tu nueva fuente 'font_numbers.ttf'
+        score_font = get_numbers_font(280)
         draw_centered_text(draw, str(left_score), 375, 1180, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 705, 1180, score_font, WHITE)
 
