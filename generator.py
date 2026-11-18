@@ -117,13 +117,13 @@ def generate_graphic(
         # En Half-Time ignoramos la condición de local/visitante: score_home a la izquierda, score_away a la derecha
         left_score, right_score = score_home, score_away
 
-        # 3. Microajuste final: bajamos Y un pelín a 1200 manteniendo X=455 y X=625
+        # 3. Números clavadísimos en posición, separación y altura
         score_font = get_numbers_font(140)
         draw_centered_text(draw, str(left_score), 455, 1200, score_font, WHITE)
         draw_centered_text(draw, str(right_score), 625, 1200, score_font, WHITE)
 
     else:
-        # MODO FULL-TIME (Intacto)
+        # MODO FULL-TIME
         bg = prepare_full_background(photo_path)
         psd_path = BASE_DIR / "full-time.psd"
         if psd_path.exists():
@@ -139,18 +139,8 @@ def generate_graphic(
             base = bg
 
         draw = ImageDraw.Draw(base)
-        erytheia_logo = load_logo(LOGOS_DIR / "erytheia_shield_white.png", max_size=164)
-        rival_logo = load_logo(rival_logo_path, max_size=164) if rival_logo_path else None
 
-        if is_home:
-            left_logo, right_logo = erytheia_logo, rival_logo
-            left_score, right_score = score_home, score_away
-            scorers, scorers_side = scorers_erytheia, "left"
-        else:
-            left_logo, right_logo = rival_logo, erytheia_logo
-            left_score, right_score = score_away, score_home
-            scorers, scorers_side = scorers_erytheia, "right"
-
+        # Se eliminan los escudos por código para dejar el diseño limpio de la plantilla PSD
         box_size = 162
         gap = 78
         total_w = box_size * 2 + gap
@@ -158,40 +148,32 @@ def generate_graphic(
         score_y = 985
 
         score_font = get_font(112, role="title")
-        draw_centered_text(draw, str(left_score), scores_x + box_size / 2, score_y + box_size / 2, score_font, WHITE)
-        draw_centered_text(draw, str(right_score), scores_x + box_size + gap + box_size / 2, score_y + box_size / 2, score_font, WHITE)
+        draw_centered_text(draw, str(score_home), scores_x + box_size / 2, score_y + box_size / 2, score_font, WHITE)
+        draw_centered_text(draw, str(score_away), scores_x + box_size + gap + box_size / 2, score_y + box_size / 2, score_font, WHITE)
 
-        if left_logo:
-            ly = score_y + (box_size - left_logo.height) // 2
-            lx = scores_x - left_logo.width - 40
-            base.paste(left_logo, (lx, ly), left_logo)
-
-        if right_logo:
-            ly = score_y + (box_size - right_logo.height) // 2
-            rx = scores_x + total_w + 40
-            base.paste(right_logo, (rx, ly), right_logo)
-
-        if scorers:
+        if scorers_erytheia:
             scorer_font = get_font(23, role="text")
             line_h = 33
             start_y = 1185
             sep_x = WIDTH // 2
-            sep_bottom = max(start_y + len(scorers) * line_h + 15, 1320)
+            sep_bottom = max(start_y + len(scorers_erytheia) * line_h + 15, 1320)
             draw.line([(sep_x, start_y - 4), (sep_x, sep_bottom)], fill=WHITE, width=2)
-            for i, line in enumerate(scorers):
+            
+            for i, line in enumerate(scorers_erytheia):
                 txt = line.upper()
                 bbox = draw.textbbox((0, 0), txt, font=scorer_font)
                 tw = bbox[2] - bbox[0]
                 y_pos = start_y + i * line_h - bbox[1]
-                if scorers_side == "left":
+                if is_home:
                     draw.text((sep_x - 45 - tw - bbox[0], y_pos), txt, font=scorer_font, fill=WHITE)
                 else:
                     draw.text((sep_x + 45 - bbox[0], y_pos), txt, font=scorer_font, fill=WHITE)
 
         footer_center_y = 1384
         footer_font = get_font(22, role="text")
-        date_up = date_text.upper()
-        draw_centered_text(draw, date_up, WIDTH / 2, footer_center_y, footer_font, WHITE)
+        date_up = date_text.upper() if date_text else ""
+        if date_up:
+            draw_centered_text(draw, date_up, WIDTH / 2, footer_center_y, footer_font, WHITE)
 
     out = OUTPUT_DIR / output_name
     base.convert("RGB").save(out, "PNG", quality=95)
